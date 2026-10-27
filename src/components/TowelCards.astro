@@ -1,0 +1,106 @@
+---
+import Icon from './Icon.astro';
+import { pathFor, type Lang } from '../i18n/config';
+import { useTranslations, gsmUnit, towelAlt } from '../i18n';
+import { TOWELS, SAMPLE_PACK, size } from '../data/products';
+import { towelImg } from '../data/images';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const main = TOWELS.filter((x) => !x.optional);
+const inSample = new Set<string>(SAMPLE_PACK.items);
+---
+
+<section id="towels" class="bg-ivory py-20 lg:py-28" aria-labelledby="towels-title">
+  <div class="container-luxe">
+    <div class="grid gap-8 lg:grid-cols-12 lg:items-end">
+      <div class="lg:col-span-7">
+        <p class="eyebrow">{t.towels.eyebrow}</p>
+        <h2 id="towels-title" class="mt-5 text-4xl leading-tight sm:text-5xl">{t.towels.title}</h2>
+      </div>
+      <p class="leading-relaxed text-ink/65 lg:col-span-5">{t.towels.intro}</p>
+    </div>
+
+    <ul class="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-y border-ink/[0.07] py-5">
+      {
+        t.towels.features.map((f) => (
+          <li class="flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-ink/70 uppercase">
+            <Icon name="check" class="h-4 w-4 text-gold" />
+            {f}
+          </li>
+        ))
+      }
+    </ul>
+
+    <ul class="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        main.map((towel) => {
+          const copy = t.towels.items[towel.id];
+          const img = towelImg(towel.image);
+          return (
+            <li class="group">
+              <div class="relative overflow-hidden bg-beige">
+                <img
+                  src={img.src}
+                  srcset={img.srcset}
+                  sizes={img.sizes}
+                  width="800"
+                  height="1000"
+                  alt={towelAlt(lang, towel)}
+                  loading="lazy"
+                  decoding="async"
+                 
+                  class="aspect-[4/5] w-full object-cover transition duration-700 group-hover:scale-[1.03]"
+                />
+                {inSample.has(towel.id) && (
+                  <span class="absolute top-4 left-4 bg-ivory/95 px-3 py-1.5 text-[0.62rem] font-semibold tracking-[0.16em] text-gold-dark uppercase">
+                    {t.towels.inSample}
+                  </span>
+                )}
+              </div>
+              <div class="mt-6 flex items-baseline justify-between gap-4">
+                <h3 class="text-2xl">
+                  {copy.name}
+                </h3>
+                <span class="shrink-0 font-serif text-lg text-gold-dark">
+                  {towel.gsm} <span class="text-sm">{gsmUnit(lang)}</span>
+                </span>
+              </div>
+              <p class="mt-1 font-serif text-3xl text-ink/80">{size(towel)} cm</p>
+              <p class="mt-3 text-sm leading-relaxed text-ink/60">
+                {copy.use}
+              </p>
+              <dl class="mt-5 grid grid-cols-2 border-t border-ink/10 pt-4 text-xs">
+                <div>
+                  <dt class="tracking-[0.14em] text-taupe uppercase">{t.towels.weight}</dt>
+                  <dd class="mt-1 font-semibold">
+                    {towel.gsm} {gsmUnit(lang)}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="tracking-[0.14em] text-taupe uppercase">{t.towels.sizeLabel}</dt>
+                  <dd class="mt-1 font-semibold">{size(towel)} cm</dd>
+                </div>
+              </dl>
+              <p class="mt-3 text-xs text-ink/50">
+                {t.towels.material}
+              </p>
+            </li>
+          );
+        })
+      }
+    </ul>
+
+    <p class="mt-14 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-ink/[0.07] pt-8 text-sm text-ink/65">
+      <span class="bg-beige px-3 py-1 text-[0.62rem] font-semibold tracking-[0.16em] text-gold-dark uppercase">{t.towels.optional}</span>
+      {t.towels.optionalNote}
+      <a href={pathFor('contact', lang) + '#form'} class="inline-flex items-center gap-1.5 font-semibold text-ink underline decoration-gold underline-offset-4">
+        {t.nav.contact}
+        <Icon name="arrow" class="h-3.5 w-3.5" />
+      </a>
+    </p>
+  </div>
+</section>

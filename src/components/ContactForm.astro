@@ -1,0 +1,289 @@
+---
+/**
+ * B2B / B2C enquiry form with €30 sample pack logic.
+ *
+ * - ?sample=1  → "Sample Pack €30" is ticked, message is pre-filled, button text changes
+ * - ?type=private / ?type=business → pre-selects the customer type
+ * - Business-only fields (hotel name, VAT) hide for private customers (pure CSS :has, JS only toggles `required`)
+ * - Submits to the Cloudflare Pages Function /api/contact (functions/api/contact.js).
+ *   With JS: fetch + redirect to the localized thank-you page. Without JS: normal POST, the function answers with a 303 redirect.
+ */
+import Icon from './Icon.astro';
+import { pathFor, type Lang } from '../i18n/config';
+import { useTranslations, gsmUnit, priceLabel } from '../i18n';
+import { SAMPLE_PACK, towelById, size } from '../data/products';
+import { SITE } from '../data/site';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const c = t.contact;
+
+const COUNTRY_CODES = [
+  'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT',
+  'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'CH', 'GB', 'NO', 'IS', 'LI', 'RS', 'MD',
+];
+const regionNames = new Intl.DisplayNames([lang], { type: 'region' });
+const collator = new Intl.Collator(lang);
+const countries = COUNTRY_CODES.map((code) => ({ code, name: regionNames.of(code) ?? code })).sort((a, b) =>
+  collator.compare(a.name, b.name),
+);
+const defaultCountry: Record<Lang, string> = { hu: 'HU', en: '', de: 'DE', it: 'IT', ro: 'RO' };
+
+const sampleItems = SAMPLE_PACK.items.map(towelById);
+const thanksPath = pathFor('thanks', lang);
+---
+
+<form
+  id="form"
+  action="/api/contact"
+  method="POST"
+  class="contact-form"
+  data-thanks={thanksPath}
+  data-sample-prefill={c.samplePrefill}
+  data-label-submit={c.submit}
+  data-label-sample={c.submitSample}
+  data-label-sending={c.sending}
+>
+  <input type="hidden" name="lang" value={lang} />
+  <input type="hidden" name="thanks" value={thanksPath} />
+  <!-- Honeypot – bots fill it, humans never see it -->
+  <div class="absolute -left-[9999px]" aria-hidden="true">
+    <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+  </div>
+
+  <!-- Customer type -->
+  <fieldset>
+    <legend class="label">{c.typeLegend}</legend>
+    <div class="mt-3 inline-grid grid-cols-2 border border-ink/15 p-1">
+      <label class="type-option">
+        <input type="radio" name="customer_type" value="business" id="type-business" class="peer sr-only" checked />
+        <span class="block cursor-pointer px-5 py-2.5 text-center text-xs font-semibold tracking-[0.12em] uppercase transition peer-checked:bg-ink peer-checked:text-ivory peer-focus-visible:outline-2 peer-focus-visible:outline-gold">
+          {c.typeBusiness}
+        </span>
+      </label>
+      <label class="type-option">
+        <input type="radio" name="customer_type" value="private" id="type-private" class="peer sr-only" />
+        <span class="block cursor-pointer px-5 py-2.5 text-center text-xs font-semibold tracking-[0.12em] uppercase transition peer-checked:bg-ink peer-checked:text-ivory peer-focus-visible:outline-2 peer-focus-visible:outline-gold">
+          {c.typePrivate}
+        </span>
+      </label>
+    </div>
+  </fieldset>
+
+  <div class="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2">
+    <div>
+      <label for="f-name" class="label">{c.name} *</label>
+      <input id="f-name" name="name" type="text" class="field" autocomplete="name" required maxlength="120" />
+    </div>
+
+    <div data-business-only>
+      <label for="f-company" class="label">{c.company} *</label>
+      <input id="f-company" name="company" type="text" class="field" autocomplete="organization" maxlength="160" />
+    </div>
+
+    <div>
+      <label for="f-country" class="label">{c.country} *</label>
+      <select id="f-country" name="country" class="field cursor-pointer" autocomplete="country" required>
+        <option value="" disabled selected={!defaultCountry[lang]}>{c.countrySelect}</option>
+        {countries.map((ct) => <option value={ct.code} selected={ct.code === defaultCountry[lang]}>{ct.name}</option>)}
+        <option value="OTHER">{c.countryOther}</option>
+      </select>
+    </div>
+
+    <div data-business-only>
+      <label for="f-vat" class="label">
+        {c.vat} <span class="font-normal tracking-normal normal-case">({c.optional})</span>
+      </label>
+      <input
+        id="f-vat"
+        name="vat"
+        type="text"
+        class="field uppercase"
+        inputmode="text"
+        autocomplete="off"
+        maxlength="20"
+        placeholder={c.vatHint}
+        aria-describedby="f-vat-error"
+      />
+      <p id="f-vat-error" class="field-error mt-2 hidden text-xs text-red-700">{c.vatInvalid}</p>
+    </div>
+
+    <div>
+      <label for="f-email" class="label">{c.email} *</label>
+      <input id="f-email" name="email" type="email" class="field" autocomplete="email" required maxlength="160" />
+    </div>
+
+    <div>
+      <label for="f-phone" class="label">
+        {c.phone} <span class="font-normal tracking-normal normal-case">({c.optional})</span>
+      </label>
+      <input id="f-phone" name="phone" type="tel" class="field" autocomplete="tel" maxlength="40" />
+    </div>
+
+    <div class="sm:col-span-2">
+      <label for="f-message" class="label">{c.message}</label>
+      <textarea id="f-message" name="message" rows="5" class="field resize-y" maxlength="4000" placeholder={c.messagePlaceholder}
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- €30 Sample pack -->
+  <div class="sample-box mt-10 border border-gold/50 bg-beige/60 transition">
+    <label for="f-sample" class="flex cursor-pointer items-start gap-4 p-5 sm:p-6">
+      <input
+        id="f-sample"
+        name="sample_pack"
+        type="checkbox"
+        value="Sample Pack €30"
+        class="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-ink"
+      />
+      <span>
+        <span class="block font-serif text-2xl leading-tight">{c.sampleLabel}</span>
+        <span class="mt-1 block text-sm leading-relaxed text-ink/65">{c.sampleText}</span>
+      </span>
+      <span class="ml-auto shrink-0 font-serif text-3xl text-gold-dark">{priceLabel(SAMPLE_PACK.price, lang)}</span>
+    </label>
+    <div class="sample-summary border-t border-gold/30 px-5 pt-4 pb-5 sm:px-6">
+      <p class="text-[0.68rem] font-semibold tracking-[0.18em] text-taupe uppercase">{c.sampleSummary}</p>
+      <ul class="mt-3 grid gap-2 sm:grid-cols-2">
+        {
+          sampleItems.map((towel) => (
+            <li class="flex items-center gap-2.5 text-sm">
+              <Icon name="check" class="h-4 w-4 shrink-0 text-gold-dark" />
+              1 × {t.towels.items[towel.id].name} {size(towel)} cm · {towel.gsm} {gsmUnit(lang)}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-4 text-xs text-ink/55">{t.sample.price}</p>
+    </div>
+  </div>
+
+  <label for="f-consent" class="mt-8 flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink/65">
+    <input id="f-consent" name="consent" type="checkbox" value="yes" required class="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-ink" />
+    <span>{c.consent} *</span>
+  </label>
+
+  <div class="form-error mt-8 hidden border-l-2 border-red-700 bg-red-50 p-4 text-sm text-red-900" role="alert">
+    {c.error} <a href={`mailto:${SITE.email}`} class="font-semibold underline">{SITE.email}</a>
+  </div>
+
+  <button type="submit" class="btn btn-primary mt-8 w-full sm:w-auto">
+    <span data-submit-label>{c.submit}</span>
+    <Icon name="arrow" class="h-4 w-4" />
+  </button>
+</form>
+
+<style>
+  /* Private customers: hide hotel name + VAT (no JS needed) */
+  .contact-form:has(#type-private:checked) [data-business-only] {
+    display: none;
+  }
+  /* Sample pack summary only when ticked */
+  .sample-summary {
+    display: none;
+  }
+  .contact-form:has(#f-sample:checked) .sample-summary {
+    display: block;
+  }
+  .contact-form:has(#f-sample:checked) .sample-box {
+    border-color: #c5a46c;
+    background: #f5f1eb;
+    box-shadow: 0 0 0 1px #c5a46c;
+  }
+  .field:user-invalid {
+    border-bottom-color: #b91c1c;
+  }
+</style>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('form.contact-form');
+
+  if (form) {
+    form.noValidate = true; // we validate ourselves; without JS the browser validates natively
+    const params = new URLSearchParams(location.search);
+    const sample = form.querySelector<HTMLInputElement>('#f-sample')!;
+    const message = form.querySelector<HTMLTextAreaElement>('#f-message')!;
+    const company = form.querySelector<HTMLInputElement>('#f-company')!;
+    const vat = form.querySelector<HTMLInputElement>('#f-vat')!;
+    const vatError = form.querySelector<HTMLElement>('#f-vat-error')!;
+    const label = form.querySelector<HTMLElement>('[data-submit-label]')!;
+    const errorBox = form.querySelector<HTMLElement>('.form-error')!;
+    const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const prefill = form.dataset.samplePrefill ?? '';
+
+    const isPrivate = () => form.querySelector<HTMLInputElement>('#type-private')!.checked;
+
+    const sync = () => {
+      label.textContent = sample.checked ? form.dataset.labelSample! : form.dataset.labelSubmit!;
+      company.required = !isPrivate();
+      if (sample.checked && !message.value.trim()) message.value = prefill;
+      if (!sample.checked && message.value.trim() === prefill) message.value = '';
+    };
+
+    // --- URL pre-selection: ?sample=1, ?type=private|business
+    if (params.get('sample') === '1') sample.checked = true;
+    const type = params.get('type');
+    if (type === 'private' || type === 'business') {
+      form.querySelector<HTMLInputElement>(`#type-${type}`)!.checked = true;
+    }
+    sync();
+    form.addEventListener('change', sync);
+
+    // --- VAT: normalize + validate format (EU: 2 letters + 2–13 chars)
+    const normalizeVat = (v: string) => v.toUpperCase().replace(/[\s.\-]/g, '');
+    const vatValid = () => {
+      const v = normalizeVat(vat.value);
+      return isPrivate() || v === '' || /^[A-Z]{2}[0-9A-Z+*]{2,13}$/.test(v);
+    };
+    vat.addEventListener('blur', () => {
+      vat.value = normalizeVat(vat.value);
+      vatError.classList.toggle('hidden', vatValid());
+    });
+
+    // --- Submit via fetch, fall back to normal POST if fetch is unavailable
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBox.classList.add('hidden');
+
+      if (!vatValid()) {
+        vatError.classList.remove('hidden');
+        vat.focus();
+        return;
+      }
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const data = new FormData(form);
+      data.set('vat', normalizeVat(String(data.get('vat') ?? '')));
+      if (isPrivate()) {
+        data.delete('company');
+        data.delete('vat');
+      }
+
+      button.disabled = true;
+      label.textContent = form.dataset.labelSending!;
+
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: data,
+          headers: { Accept: 'application/json' },
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.ok) throw new Error(json.error || res.statusText);
+        location.href = form.dataset.thanks + (sample.checked ? '?sample=1' : '');
+      } catch (err) {
+        console.error('[contact]', err);
+        errorBox.classList.remove('hidden');
+        button.disabled = false;
+        sync();
+      }
+    });
+  }
+</script>

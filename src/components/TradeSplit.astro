@@ -1,0 +1,44 @@
+---
+import Icon from './Icon.astro';
+import { pathFor, type Lang } from '../i18n/config';
+import { useTranslations } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const contact = pathFor('contact', lang);
+const cards = [
+  { ...t.trade.hotel, href: `${contact}?type=business#form`, dark: true },
+  { ...t.trade.home, href: `${contact}?type=private#form`, dark: false },
+];
+---
+
+<section id="trade" class="bg-beige py-20 lg:py-28" aria-labelledby="trade-title">
+  <div class="container-luxe">
+    <p class="eyebrow">{t.trade.eyebrow}</p>
+    <h2 id="trade-title" class="mt-5 text-4xl sm:text-5xl">{t.trade.title}</h2>
+    <div class="mt-12 grid gap-6 md:grid-cols-2">
+      {
+        cards.map((c) => (
+          <article class:list={['flex flex-col justify-between p-9 sm:p-12', c.dark ? 'bg-ink text-ivory' : 'bg-ivory text-ink']}>
+            <div>
+              <h3 class="text-3xl">{c.title}</h3>
+              <p class:list={['mt-4 max-w-md leading-relaxed', c.dark ? 'text-ivory/70' : 'text-ink/65']}>{c.text}</p>
+            </div>
+            <a
+              href={c.href}
+              class:list={[
+                'mt-10 inline-flex items-center gap-2 self-start text-[0.75rem] font-semibold tracking-[0.16em] uppercase underline decoration-gold decoration-1 underline-offset-8 transition hover:text-gold',
+              ]}
+            >
+              {c.cta}
+              <Icon name="arrow" class="h-4 w-4" />
+            </a>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>

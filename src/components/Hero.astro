@@ -1,0 +1,68 @@
+---
+import Icon from './Icon.astro';
+import { pathFor, type Lang } from '../i18n/config';
+import { useTranslations } from '../i18n';
+import { HERO_IMG } from '../data/images';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const sampleHref = `${pathFor('contact', lang)}?sample=1#form`;
+
+---
+
+<section class="relative overflow-hidden bg-beige" aria-labelledby="hero-title">
+  <div class="container-luxe relative z-10 grid items-center lg:min-h-[calc(100svh_-_4.5rem_-_5.5rem)] lg:grid-cols-2">
+    <div class="py-14 sm:py-20 lg:py-24 lg:pr-14">
+      <p class="eyebrow">{t.hero.eyebrow}</p>
+      <h1 id="hero-title" class="mt-6 text-[2.9rem] leading-[1.02] sm:text-6xl xl:text-[5.2rem]">
+        {t.hero.title}
+      </h1>
+      <span class="mt-8 block h-px w-16 bg-gold" aria-hidden="true"></span>
+      <p class="mt-8 max-w-xl text-base leading-relaxed text-ink/70 sm:text-lg">{t.hero.lead}</p>
+
+      <div class="mt-10 flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div class="flex flex-col">
+          <a href={sampleHref} class="btn btn-primary">
+            {t.hero.ctaPrimary}
+            <Icon name="arrow" class="h-4 w-4" />
+          </a>
+          <span class="mt-2.5 text-xs tracking-wide text-taupe">{t.hero.ctaPrimaryNote}</span>
+        </div>
+        <a href="#towels" class="btn btn-ghost">{t.hero.ctaSecondary}</a>
+      </div>
+
+      <dl class="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-ink/10 pt-8">
+        {
+          t.hero.stats.map((s) => (
+            <div>
+              <dt class="sr-only">{s.label}</dt>
+              <dd>
+                <span class="block font-serif text-2xl text-ink sm:text-3xl">{s.value}</span>
+                <span class="mt-1 block text-[0.68rem] tracking-[0.14em] text-taupe uppercase">{s.label}</span>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </div>
+
+  <!-- Hero image: below the copy on mobile, right half on desktop -->
+  <div class="relative aspect-[4/3] w-full lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[50%]">
+    <img
+      src={HERO_IMG.src}
+      srcset={HERO_IMG.srcset}
+      sizes={HERO_IMG.sizes}
+      width="2400"
+      height="1400"
+      alt={t.hero.imageAlt}
+      fetchpriority="high"
+      decoding="async"
+      class="h-full w-full object-cover object-[70%_center]"
+    />
+    <div class="pointer-events-none absolute inset-y-0 left-0 hidden w-24 bg-linear-to-r from-beige to-transparent lg:block"></div>
+  </div>
+</section>

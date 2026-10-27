@@ -1,0 +1,95 @@
+---
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import { pathFor, type Lang } from '../i18n/config';
+import { useTranslations } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  alternates: Record<Lang, string>;
+}
+const { lang, alternates } = Astro.props;
+const t = useTranslations(lang);
+const home = pathFor('home', lang);
+const contact = pathFor('contact', lang);
+const sampleHref = `${contact}?sample=1#form`;
+
+const links = [
+  { href: `${home}#towels`, label: t.nav.towels },
+  { href: `${home}#sample`, label: t.nav.sample },
+  { href: `${home}#trade`, label: t.nav.trade },
+  { href: contact, label: t.nav.contact },
+];
+---
+
+<a
+  href="#main"
+  class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:bg-ink focus:px-4 focus:py-2 focus:text-ivory"
+  >{t.a11y.skip}</a
+>
+
+<header class="sticky top-0 z-50 border-b border-ink/[0.07] bg-ivory/90 backdrop-blur-md">
+  <div class="container-luxe flex h-[4.5rem] items-center justify-between gap-6">
+    <!-- Wordmark -->
+    <a href={home} class="group flex flex-col leading-none" aria-label={t.a11y.home}>
+      <span class="font-serif text-[1.55rem] tracking-[0.18em] text-ink">VELLUTO</span>
+      <span class="mt-1 flex items-center gap-2 text-[0.55rem] font-semibold tracking-[0.5em] text-gold-dark">
+        <span class="h-px w-5 bg-gold transition-all group-hover:w-8"></span>HOME
+      </span>
+    </a>
+
+    <!-- Desktop nav -->
+    <nav class="hidden lg:block" aria-label="Main">
+      <ul class="flex items-center gap-9">
+        {
+          links.map((l) => (
+            <li>
+              <a href={l.href} class="text-[0.72rem] font-semibold tracking-[0.16em] text-ink/70 uppercase transition hover:text-ink">
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-5">
+      <LanguageSwitcher lang={lang} alternates={alternates} uid="hd" class="hidden md:flex" />
+      <a href={sampleHref} class="btn btn-gold hidden px-5 py-3 xl:inline-flex">{t.nav.headerCta}</a>
+
+      <!-- Mobile menu (no JS needed) -->
+      <details class="group relative lg:hidden">
+        <summary
+          class="flex h-10 w-10 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden"
+          aria-label={t.a11y.menu}
+        >
+          <span class="relative block h-3 w-6">
+            <span class="absolute top-0 left-0 h-px w-6 bg-ink transition group-open:top-1.5 group-open:rotate-45"></span>
+            <span class="absolute bottom-0 left-0 h-px w-6 bg-ink transition group-open:bottom-1.5 group-open:-rotate-45"></span>
+          </span>
+        </summary>
+        <div class="fixed inset-x-0 top-[4.5rem] border-b border-ink/10 bg-ivory px-5 pt-4 pb-8 shadow-xl sm:px-8">
+          <ul class="divide-y divide-ink/10">
+            {
+              links.map((l) => (
+                <li>
+                  <a href={l.href} class="block py-4 font-serif text-2xl text-ink">
+                    {l.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+          <a href={sampleHref} class="btn btn-gold mt-6 w-full">{t.hero.ctaPrimary}</a>
+          <LanguageSwitcher lang={lang} alternates={alternates} uid="mb" class="mt-6 justify-center md:hidden" />
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Close the mobile menu after tapping an in-page link.
+  document.querySelectorAll<HTMLAnchorElement>('header details a').forEach((a) =>
+    a.addEventListener('click', () => a.closest('details')?.removeAttribute('open')),
+  );
+</script>

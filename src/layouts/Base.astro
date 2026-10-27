@@ -1,0 +1,136 @@
+---
+/**
+ * Base layout – all SEO lives here:
+ * <title>, meta description, canonical, hreflang (5 languages + x-default),
+ * robots, Open Graph, Twitter Card, JSON-LD (Organization + BreadcrumbList + page extras).
+ */
+import '@fontsource/cormorant-garamond/400.css';
+import '@fontsource/cormorant-garamond/500.css';
+import '@fontsource/cormorant-garamond/400-italic.css';
+import '@fontsource-variable/manrope';
+import '../styles/global.css';
+
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { LANGS, LANG_META, DEFAULT_LANG, ROUTES, alternatesFor, pathFor, type Lang, type RouteKey } from '../i18n/config';
+import { SITE } from '../data/site';
+
+export interface Crumb {
+  name: string;
+  path: string;
+}
+
+interface Props {
+  lang: Lang;
+  route: RouteKey;
+  title: string;
+  description: string;
+  breadcrumbs: Crumb[];
+  /** Extra JSON-LD objects (Product, Offer, …) */
+  jsonLd?: Record<string, unknown>[];
+  /** Preload the LCP image (hero) */
+  preloadImage?: { href: string; srcset: string; sizes: string };
+  ogImage?: string;
+}
+
+const { lang, route, title, description, breadcrumbs, jsonLd = [], preloadImage, ogImage = SITE.ogImage } = Astro.props;
+
+const site = Astro.site!;
+const abs = (path: string) => new URL(path, site).href;
+const alternates = alternatesFor(route);
+const canonical = abs(pathFor(route, lang));
+const indexable = ROUTES[route].indexable;
+
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': abs('/#organization'),
+  name: SITE.brand,
+  legalName: SITE.legalName,
+  url: abs(`/${lang}/`),
+  logo: abs('/favicon.svg'),
+  email: SITE.email,
+  telephone: SITE.phone,
+  vatID: SITE.vatId,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: SITE.address.street,
+    postalCode: SITE.address.postalCode,
+    addressLocality: `${SITE.address.locality} (${SITE.address.localityHu})`,
+    addressRegion: SITE.address.region,
+    addressCountry: SITE.address.countryCode,
+  },
+  areaServed: { '@type': 'Place', name: 'European Union' },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'sales',
+    email: SITE.email,
+    availableLanguage: ['Hungarian', 'English', 'German', 'Italian', 'Romanian'],
+  },
+};
+
+const breadcrumbList = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: breadcrumbs.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.name,
+    item: abs(c.path),
+  })),
+};
+
+const ld = [organization, breadcrumbList, ...jsonLd];
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={indexable ? 'index, follow, max-image-preview:large' : 'noindex, follow'} />
+    <link rel="canonical" href={canonical} />
+
+    {/* hreflang – every language version + x-default (English) */}
+    {indexable && LANGS.map((l) => <link rel="alternate" hreflang={l} href={abs(alternates[l])} />)}
+    {indexable && <link rel="alternate" hreflang="x-default" href={abs(alternates[DEFAULT_LANG])} />}
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap.xml" />
+    <meta name="theme-color" content="#F5F1EB" />
+    <meta name="format-detection" content="telephone=no" />
+
+    {preloadImage && <link rel="preload" as="image" href={preloadImage.href} imagesrcset={preloadImage.srcset} imagesizes={preloadImage.sizes} fetchpriority="high" />}
+
+    {/* Open Graph */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.brand} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={LANG_META[lang].ogLocale} />
+    {LANGS.filter((l) => l !== lang).map((l) => <meta property="og:locale:alternate" content={LANG_META[l].ogLocale} />)}
+    <meta property="og:image" content={abs(ogImage)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={title} />
+
+    {/* Twitter Card */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={abs(ogImage)} />
+    {SITE.twitter && <meta name="twitter:site" content={SITE.twitter} />}
+
+    {ld.map((obj) => <script type="application/ld+json" set:html={JSON.stringify(obj)} />)}
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <Header lang={lang} alternates={alternates} />
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

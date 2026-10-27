@@ -1,0 +1,73 @@
+---
+/**
+ * Inline SVG flags (emoji flags do not render on Windows).
+ * `uid` keeps clipPath ids unique when the same flag appears twice on a page.
+ */
+import type { Lang } from '../i18n/config';
+
+interface Props {
+  lang: Lang;
+  uid?: string;
+  class?: string;
+}
+const { lang, uid = 'f', class: cls = 'h-3.5 w-5' } = Astro.props;
+const id = `${uid}-${lang}`;
+---
+
+<span class:list={['inline-block shrink-0 overflow-hidden rounded-[2px] ring-1 ring-ink/10', cls]} aria-hidden="true">
+  {
+    lang === 'hu' && (
+      <svg viewBox="0 0 6 3" preserveAspectRatio="none" class="block h-full w-full">
+        <rect width="6" height="1" fill="#CE2939" />
+        <rect y="1" width="6" height="1" fill="#FFFFFF" />
+        <rect y="2" width="6" height="1" fill="#477050" />
+      </svg>
+    )
+  }
+  {
+    lang === 'de' && (
+      <svg viewBox="0 0 5 3" preserveAspectRatio="none" class="block h-full w-full">
+        <rect width="5" height="1" fill="#000000" />
+        <rect y="1" width="5" height="1" fill="#DD0000" />
+        <rect y="2" width="5" height="1" fill="#FFCE00" />
+      </svg>
+    )
+  }
+  {
+    lang === 'it' && (
+      <svg viewBox="0 0 3 2" preserveAspectRatio="none" class="block h-full w-full">
+        <rect width="1" height="2" fill="#009246" />
+        <rect x="1" width="1" height="2" fill="#FFFFFF" />
+        <rect x="2" width="1" height="2" fill="#CE2B37" />
+      </svg>
+    )
+  }
+  {
+    lang === 'ro' && (
+      <svg viewBox="0 0 3 2" preserveAspectRatio="none" class="block h-full w-full">
+        <rect width="1" height="2" fill="#002B7F" />
+        <rect x="1" width="1" height="2" fill="#FCD116" />
+        <rect x="2" width="1" height="2" fill="#CE1126" />
+      </svg>
+    )
+  }
+  {
+    lang === 'en' && (
+      <svg viewBox="0 0 60 30" preserveAspectRatio="xMidYMid slice" class="block h-full w-full">
+        <clipPath id={`${id}-s`}>
+          <path d="M0,0 v30 h60 v-30 z" />
+        </clipPath>
+        <clipPath id={`${id}-t`}>
+          <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z" />
+        </clipPath>
+        <g clip-path={`url(#${id}-s)`}>
+          <path d="M0,0 v30 h60 v-30 z" fill="#012169" />
+          <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6" />
+          <path d="M0,0 L60,30 M60,0 L0,30" clip-path={`url(#${id}-t)`} stroke="#C8102E" stroke-width="4" />
+          <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10" />
+          <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6" />
+        </g>
+      </svg>
+    )
+  }
+</span>

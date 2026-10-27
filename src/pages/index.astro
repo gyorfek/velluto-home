@@ -1,0 +1,43 @@
+---
+/**
+ * Root "/" – sends visitors to their browser language (hu/de/it/ro), otherwise /en/.
+ * Not indexed; search engines use the hreflang links and x-default (/en/).
+ */
+import { LANGS, LANG_META, DEFAULT_LANG, pathFor } from '../i18n/config';
+const abs = (p: string) => new URL(p, Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Velluto Home – Luxury Hotel Textiles</title>
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href={abs(pathFor('home', DEFAULT_LANG))} />
+    {LANGS.map((l) => <link rel="alternate" hreflang={l} href={abs(pathFor('home', l))} />)}
+    <link rel="alternate" hreflang="x-default" href={abs(pathFor('home', DEFAULT_LANG))} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline define:vars={{ langs: LANGS, fallback: DEFAULT_LANG }}>
+      var pick = fallback;
+      try {
+        var prefs = navigator.languages || [navigator.language || ''];
+        for (var i = 0; i < prefs.length; i++) {
+          var code = String(prefs[i]).slice(0, 2).toLowerCase();
+          if (langs.indexOf(code) !== -1) { pick = code; break; }
+        }
+      } catch (e) {}
+      location.replace('/' + pick + '/');
+    </script>
+    <noscript><meta http-equiv="refresh" content={`0; url=${pathFor('home', DEFAULT_LANG)}`} /></noscript>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #f5f1eb; color: #141414; display: grid; place-items: center; min-height: 100vh; margin: 0; }
+      a { color: inherit; margin: 0 .6rem; letter-spacing: .14em; font-size: .8rem; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      {LANGS.map((l) => <a href={pathFor('home', l)} hreflang={l} lang={l}>{LANG_META[l].label}</a>)}
+    </nav>
+  </body>
+</html>

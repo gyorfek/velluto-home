@@ -1,0 +1,36 @@
+---
+import Base from '../../layouts/Base.astro';
+import Hero from '../../components/Hero.astro';
+import UspBar from '../../components/UspBar.astro';
+import SamplePack from '../../components/SamplePack.astro';
+import TowelCards from '../../components/TowelCards.astro';
+import TradeSplit from '../../components/TradeSplit.astro';
+import { LANGS, pathFor, type Lang } from '../../i18n/config';
+import { useTranslations } from '../../i18n';
+import { towelProductsLd, samplePackLd } from '../../data/schema';
+import { HERO_IMG } from '../../data/images';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const abs = (p: string) => new URL(p, Astro.site).href;
+---
+
+<Base
+  lang={lang}
+  route="home"
+  title={t.meta.home.title}
+  description={t.meta.home.description}
+  breadcrumbs={[{ name: t.breadcrumb.home, path: pathFor('home', lang) }]}
+  jsonLd={[...towelProductsLd(lang, abs), samplePackLd(lang, abs)]}
+  preloadImage={{ href: HERO_IMG.src, srcset: HERO_IMG.srcset, sizes: HERO_IMG.sizes }}
+>
+  <Hero lang={lang} />
+  <UspBar lang={lang} />
+  <SamplePack lang={lang} />
+  <TowelCards lang={lang} />
+  <TradeSplit lang={lang} />
+</Base>

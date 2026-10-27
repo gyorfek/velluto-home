@@ -1,0 +1,32 @@
+---
+/** Cloudflare Pages serves dist/404.html for unknown paths. */
+import { LANGS, LANG_META, pathFor } from '../i18n/config';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>404 | Velluto Home</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      body { font-family: Georgia, serif; background: #f5f1eb; color: #141414; display: grid; place-items: center; min-height: 100vh; margin: 0; text-align: center; }
+      h1 { font-weight: 400; font-size: 3rem; margin: 0 0 1rem; }
+      p { font-family: system-ui, sans-serif; color: #8a7a64; }
+      span { display: block; width: 60px; height: 1px; background: #c5a46c; margin: 1.5rem auto; }
+      a { font-family: system-ui, sans-serif; color: #141414; margin: 0 .6rem; letter-spacing: .14em; font-size: .8rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>VELLUTO HOME</p>
+      <h1>404</h1>
+      <span></span>
+      <nav>
+        {LANGS.map((l) => <a href={pathFor('home', l)} hreflang={l} lang={l} title={LANG_META[l].name}>{LANG_META[l].label}</a>)}
+      </nav>
+    </main>
+  </body>
+</html>

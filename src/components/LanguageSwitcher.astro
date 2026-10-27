@@ -1,0 +1,57 @@
+---
+/**
+ * HU | EN | DE | IT | RO – links to the SAME page in the other language
+ * (localized slug from src/i18n/config.ts). A tiny script carries over the
+ * query string and #hash, so e.g. /de/kontakt/?sample=1 → /it/contatti/?sample=1.
+ */
+import Flag from './Flag.astro';
+import { LANGS, LANG_META, type Lang } from '../i18n/config';
+import { useTranslations } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  alternates: Record<Lang, string>;
+  uid: string;
+  class?: string;
+}
+const { lang, alternates, uid, class: cls } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<nav aria-label={t.a11y.language} class:list={['flex items-center', cls]}>
+  <ul class="flex items-center">
+    {
+      LANGS.map((l, i) => (
+        <li class="flex items-center">
+          {i > 0 && <span class="mx-1.5 h-3 w-px bg-ink/15" aria-hidden="true" />}
+          <a
+            href={alternates[l]}
+            hreflang={l}
+            lang={l}
+            data-lang-link
+            aria-current={l === lang ? 'true' : undefined}
+            title={LANG_META[l].name}
+            class:list={[
+              'group flex items-center gap-1.5 py-2 text-[0.7rem] font-semibold tracking-[0.14em] transition',
+              l === lang ? 'text-ink' : 'text-ink/45 hover:text-ink',
+            ]}
+          >
+            <Flag lang={l} uid={uid} class:list={['h-3 w-[18px]', l === lang ? '' : 'opacity-70 group-hover:opacity-100']} />
+            <span class:list={[l === lang && 'border-b border-gold']}>{LANG_META[l].label}</span>
+            <span class="sr-only">– {LANG_META[l].name}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<script>
+  // Keep ?query and #hash when switching language.
+  const extra = location.search + location.hash;
+  if (extra) {
+    document.querySelectorAll<HTMLAnchorElement>('a[data-lang-link]').forEach((a) => {
+      a.href = a.pathname + extra;
+    });
+  }
+</script>
